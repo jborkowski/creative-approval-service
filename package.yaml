@@ -39,24 +39,22 @@ dependencies:
 - polysemy
 - polysemy-plugin
 - errors
-- wai
-- warp
 - uuid
 - time
 - bytestring
 - text
 - text-show
 - lens
-- req
+- req >= 3.1.0
 - configurator
 - mtl
 - http-client
 - http-client-tls
 - connection
-- fast-logger
 - retry
 - co-log-core
 - timers
+- modern-uri
 
 library:
   source-dirs: src

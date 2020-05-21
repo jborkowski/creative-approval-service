@@ -1,2 +1,3 @@
 .stack-work/
 *~
+config/prod-config.config

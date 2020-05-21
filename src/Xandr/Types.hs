@@ -1,12 +1,13 @@
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TemplateHaskell       #-}
-module Xandr.Model where
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
+module Xandr.Types where
 
 import Data.Aeson
 import Data.Aeson.Casing
 
-import Data.Text     as T
+import Data.Text         as T
 import GHC.Generics
 
 data Template = NativeTemplate | BannerTemplate deriving (Show)
@@ -65,9 +66,9 @@ instance ToJSON NativeAttr where
 ---------------------------------------------------------------------
 
 data Person = Person
-    { personFirstName :: Text
-    , personLastName  :: Text
-    } deriving (Generic)
+  { personFirstName :: T.Text
+  , personLastName  :: T.Text
+  } deriving (Generic)
 
 instance ToJSON Person where
     toJSON = genericToJSON $ aesonPrefix snakeCase
@@ -94,66 +95,85 @@ instance ToJSON ImageAsset where
 
 ---------------------------------------------------------------------
 
-data Image =
-  Image { imageUrl       :: Url
-        , imageUrlSecure :: Url
-        , imageWidth     :: Int
-        , imageHeight    :: Int
-        } deriving (Generic)
+data Image = Image
+  { imageUrl       :: Url
+  , imageUrlSecure :: Url
+  , imageWidth     :: Int
+  , imageHeight    :: Int
+  } deriving (Generic)
 
 instance ToJSON Image where
   toJSON = genericToJSON $ aesonPrefix snakeCase
 
 ---------------------------------------------------------------------
 
-data Creative =
-   Banner { bannerClickTarget    :: T.Text
-          , bannerCode           :: T.Text
-          , bannerHeigh          :: Int
-          , bannerWidth          :: Int
-          , bannerMediaUrl       :: Url
-          , bannerMediaUrlSecure :: Url
-          , bannerPixels         :: [Pixel]
-          , bannerTemplate       :: Template
-          , bannerAllowAudit     :: Bool
-          , bannerAllowSslAudit  :: Bool
-          }
-  | Native { nativeCode            :: T.Text
-           , nativeMediaUrl        :: Url
-           , nativeMediaUrlSecure  :: Url
-           , nativeNativeAttribute :: NativeAttr
-           , nativeTemplate        :: Template
-           , nativeAllowAudit      :: Bool
-           , nativeAllowSslAudit   :: Bool
-           } deriving (Generic)
+data BannerCreative = BannerCreative
+  { bannerClickTarget    :: T.Text
+  , bannerCode           :: T.Text
+  , bannerHeigh          :: Int
+  , bannerWidth          :: Int
+  , bannerMediaUrl       :: Url
+  , bannerMediaUrlSecure :: Url
+  , bannerPixels         :: [Pixel]
+  , bannerTemplate       :: Template
+  , bannerAllowAudit     :: Bool
+  , bannerAllowSslAudit  :: Bool
+  } deriving (Generic)
 
-instance ToJSON Creative where
-   toJSON = genericToJSON $ aesonPrefix snakeCase
+data NativeCreative = NativeCreative
+  { nativeCode            :: T.Text
+  , nativeMediaUrl        :: Url
+  , nativeMediaUrlSecure  :: Url
+  , nativeNativeAttribute :: NativeAttr
+  , nativeTemplate        :: Template
+  , nativeAllowAudit      :: Bool
+  , nativeAllowSslAudit   :: Bool
+  } deriving (Generic)
 
-bannerCreative :: T.Text -> T.Text -> Int -> Int -> Url -> Url -> [Pixel] -> Creative
-bannerCreative clickTarget code heigh width mediaUrl mediaUrlSecure pixels =
-  Banner { bannerClickTarget = clickTarget
-         , bannerCode = code
-         , bannerHeigh = heigh
-         , bannerWidth = width
-         , bannerMediaUrl = mediaUrl
-         , bannerMediaUrlSecure = mediaUrlSecure
-         , bannerPixels = pixels
-         , bannerTemplate = BannerTemplate
-         , bannerAllowAudit = True
-         , bannerAllowSslAudit = True
-         }
+instance ToJSON BannerCreative where
+  toJSON = genericToJSON $ aesonPrefix snakeCase
 
-nativeCreative :: T.Text -> Url -> Url -> NativeAttr -> Creative
-nativeCreative code mediaUrl mediaUrlSecure nativeAttr =
-  Native { nativeCode = code
-         , nativeMediaUrl = mediaUrl
-         , nativeMediaUrlSecure = mediaUrlSecure
-         , nativeNativeAttribute = nativeAttr
-         , nativeTemplate = NativeTemplate
-         , nativeAllowAudit = True
-         , nativeAllowSslAudit = True
-         }
+instance ToJSON NativeCreative where
+  toJSON = genericToJSON $ aesonPrefix snakeCase
+
+bannerCreative :: T.Text -> T.Text -> Int -> Int -> Url -> Url -> [Pixel] -> BannerCreative
+bannerCreative clickTarget code heigh width mediaUrl mediaUrlSecure pixels = BannerCreative
+  { bannerClickTarget = clickTarget
+  , bannerCode = code
+  , bannerHeigh = heigh
+  , bannerWidth = width
+  , bannerMediaUrl = mediaUrl
+  , bannerMediaUrlSecure = mediaUrlSecure
+  , bannerPixels = pixels
+  , bannerTemplate = BannerTemplate
+  , bannerAllowAudit = True
+  , bannerAllowSslAudit = True
+  }
+
+nativeCreative :: T.Text -> Url -> Url -> NativeAttr -> NativeCreative
+nativeCreative code mediaUrl mediaUrlSecure nativeAttr = NativeCreative
+  { nativeCode = code
+  , nativeMediaUrl = mediaUrl
+  , nativeMediaUrlSecure = mediaUrlSecure
+  , nativeNativeAttribute = nativeAttr
+  , nativeTemplate = NativeTemplate
+  , nativeAllowAudit = True
+  , nativeAllowSslAudit = True
+  }
+
+---------------------------------------------------------------------
+
+data UploadStatus = OKAY | NOK T.Text deriving (Show, Eq)
+
+instance FromJSON UploadStatus where
+  parseJSON = withObject "response" $ \o -> do
+    res <- o .: "response"
+    (status :: Maybe T.Text) <- res .:? "status"
+    error  <- res .:? "error"
+    case (status, error) of
+      (Just "OK", Nothing) -> return OKAY
+      (Nothing, Just err)  -> return (NOK err)
+      (Just s, _)          -> return (NOK ("unsupported response status: " <> s))
 
 ---------------------------------------------------------------------
 
@@ -178,7 +198,7 @@ instance FromJSON SingleResponseRoot where
 
 data SingleResponse =
   SingleResponse { singleResponseStatus   :: T.Text
-                 , singleResponseCreative :: Maybe ResponseCreative
+                 , singleResponseCreative :: Maybe CreativeInfo
                  } deriving (Generic, Show)
 
 instance FromJSON SingleResponse where
@@ -186,27 +206,34 @@ instance FromJSON SingleResponse where
 
 ---------------------------------------------------------------------
 
-data MultipleResponse =
-  MultipleResponse { multipleResponseStatus       :: T.Text
-                   , multipleResponseCount        :: Int
-                   , multipleResponseStartElement :: Int
-                   , multipleResponseNumElements  :: Int
-                   , multipleResponseCreatives    :: [ResponseCreative]
-                   } deriving (Generic, Show)
+data Response = Response
+  { responseStatus       :: T.Text
+  , responseCount        :: Int
+  , responseStartElement :: Int
+  , responseNumElements  :: Int
+  , responseCreatives    :: [CreativeInfo]
+  } deriving (Generic, Show)
 
-instance FromJSON MultipleResponse where
-   parseJSON = genericParseJSON $ aesonPrefix snakeCase
+instance FromJSON Response where
+  parseJSON = withObject "response" $ \o -> do
+    r <- o .: "response"
+    responseStatus       <- r .: "status"
+    responseCount        <- r .: "count"
+    responseStartElement <- r .: "start_element"
+    responseNumElements  <- r .: "num_elements"
+    responseCreatives    <- r .: "creatives"
+    return Response{..}
 
 ---------------------------------------------------------------------
 
-data ResponseCreative =
-  ResponseCreative { responseCreativeId            :: Int
-                   , responseCreativeActive        :: Bool
-                   , responseCreativeIsExpired     :: Bool
-                   , responseCreativeCode          :: T.Text
-                   , responseCreativeAuditStatus   :: AuditStatus
-                   , responseCreativeAuditFeedback :: Maybe T.Text
-                   } deriving (Generic, Show)
+data CreativeInfo = CreativeInfo
+  { creativeId            :: Int
+  , creativeActive        :: Bool
+  , creativeIsExpired     :: Bool
+  , creativeCode          :: T.Text
+  , creativeAuditStatus   :: AuditStatus
+  , creativeAuditFeedback :: Maybe T.Text
+  } deriving (Generic, Show)
 
-instance FromJSON ResponseCreative where
+instance FromJSON CreativeInfo where
    parseJSON = genericParseJSON $ aesonPrefix snakeCase

@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TemplateHaskell    #-}
-module Panel.Model where
+module Panel.Types where
 
 import           Data.Aeson
 import           Data.Aeson.Casing

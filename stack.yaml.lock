@@ -10,14 +10,35 @@ packages:
       size: 424
       sha256: 6709021bf3b2a194ed4b7ad706092463e990b619bf52d60a1e7af22af98d3c4b
   original:
-    hackage: timers-0.2.0.3@sha256:ec91266e5ed73e958857fd07332ed547ea01205133769fba51cc40577549ffe9,1168
+    hackage: timers-0.2.0.3
 - completed:
     hackage: suspend-0.2.0.0@sha256:0d98526558b773c3ff792664bc45d7a083a32eedb6206d4101a7570869c75a28,1115
     pantry-tree:
       size: 424
       sha256: 70600cf9fc141612dcfb21573c4ccbec59922fb218b384ed380458cf6b0c67e6
   original:
-    hackage: suspend-0.2.0.0@sha256:0d98526558b773c3ff792664bc45d7a083a32eedb6206d4101a7570869c75a28,1115
+    hackage: suspend-0.2.0.0
+- completed:
+    hackage: req-3.1.0@sha256:c42bf205421a3a07749c725d1a9ebd494dd577cd2f7f62e7ff26a98b3229da1c,4800
+    pantry-tree:
+      size: 712
+      sha256: d91f5677cf1adc0a121fa9aa330270c7eb273f499ba519383a29b0f6b0d4bf22
+  original:
+    hackage: req-3.1.0
+- completed:
+    hackage: polysemy-1.3.0.0@sha256:bf1d559c7e26e8a0ed31fc45d84635e329a4a31bfd39e713a39adf639bcbd309,6141
+    pantry-tree:
+      size: 4309
+      sha256: 770af8c91981ccb8fe388ba62897fdf4eb394df433ab10def66d6e111b6f09f7
+  original:
+    hackage: polysemy-1.3.0.0
+- completed:
+    hackage: polysemy-plugin-0.2.5.0@sha256:67e30be568a141b852aace1a60e180cb5060fbb2835365a81a3ea779536d6d35,2952
+    pantry-tree:
+      size: 1232
+      sha256: 5c90dac2eba48b4e337b302347c233ecaedb63e333641e094e718a548ac86711
+  original:
+    hackage: polysemy-plugin-0.2.5.0
 snapshots:
 - completed:
     size: 524164

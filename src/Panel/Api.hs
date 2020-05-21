@@ -2,69 +2,59 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
-module Panel.Api where
+module Panel.API where
 
-import           Configuration           (PanelConfig (..))
+import           Common.Exceptions       (showException)
+import           Common.Logging
+import           Common.Network          (parseUrl)
+import           Configuration.Types     (getPanelConfig, ModuleConfig, PanelConfig (..))
 import           Control.Monad.IO.Class
-import           System.Log.FastLogger
 import           Control.Monad.Trans
-import           Data.Aeson
-import qualified Data.Aeson                    as A
-import qualified Data.ByteString         as BS
+import qualified Data.Aeson              as A
 import           Data.Functor            ((<&>))
+import           Data.Maybe              (fromMaybe)
 import qualified Data.Text               as T
 import           Network.Connection      (TLSSettings (TLSSettingsSimple))
 import           Network.HTTP.Client     (newManager)
 import           Network.HTTP.Client.TLS (mkManagerSettings)
 import           Network.HTTP.Req
-import           Panel.Model
+import           Panel.Types
 import           Polysemy                (Embed, Members, Sem)
 import qualified Polysemy                as P
+import           Polysemy.Error
 import qualified Polysemy.Input          as PI
+import qualified Polysemy.Output         as PO
 import qualified Polysemy.Reader         as PR
-import           TextShow                (showt)
-import           Data.Maybe                   (fromMaybe)
+import           TextShow                (TextShow, showt)
 
 
 
 data PanelAPI m a where
   FetchBanners :: Region -> CreativeStatus -> PanelAPI m [Banner]
+  FetchNatives :: Region -> CreativeStatus -> PanelAPI m [Native]
+  -- SetState :: UUID -> CreativeStatus -> PanelAPI m ()
 
 P.makeSem ''PanelAPI
 
-a = fromMaybe
-
-runPanelAPIonReq :: Members [ Embed IO, PR.Reader PanelConfig ] r
-                 => Sem (PanelAPI : r) a
+runPanelApiOnReq :: Members '[ Embed IO
+                             , ModuleConfig
+                             , PO.Output LogMessage
+                             , Error String] r
+                 => Sem (PanelAPI ': r) a
                  -> Sem r a
-runPanelAPIonReq = P.reinterpret $ \case
-  FetchBanners region status -> do
-    config <- PR.ask
-    conn  <- PI.input
-    P.embed $ conn
-
-
-username = "adpilotsp_bidder"
-password = "2447417e965B@"
-baseUrl = "https://api.adnxs.com"
-memberId = 1523
-
-url :: BS.ByteString
-url = "https://panel.internal.cortb.pl/internal-api/creation-approve"
-
-
-buildUrl :: BS.ByteString -> Region -> Inventory -> Maybe (Url 'Https)
-buildUrl url region inventory = fst <$> parseUrlHttps url <&> \url -> url /: showt region /: showt inventory
-
-fetchBanners' :: (MonadHttp m) => Region -> CreativeStatus -> m [Banner]
-fetchBanners' region status = do
-  case buildUrl url region Banners of
-    Just url -> do
-      responseBody <$> req GET url NoReqBody jsonResponse ("status" =: showt status)
-    Nothing -> return []
-
-test :: IO ()
-test =
-  runReq defaultHttpConfig $ do
-    r <- fetchBanners EU New
-    liftIO $ print (r)
+runPanelApiOnReq sem = do
+  (PanelConfig _ _ url) <- getPanelConfig
+  (url', options) <- parseUrl url
+  P.interpret (\case
+    FetchBanners region status -> do
+      response <- fromExceptionVia showException $ runReq defaultHttpConfig $ buildRequest url' region Banners status
+      let banners :: [Banner] = responseBody response
+      return banners
+    FetchNatives region status -> do
+      response <- fromExceptionVia showException $ runReq defaultHttpConfig $ buildRequest url' region Natives status
+      let natives :: [Native] = responseBody response
+      return natives
+    ) sem
+    where
+      buildRequest :: (MonadHttp m, A.FromJSON b) => Url scheme -> Region -> Inventory -> CreativeStatus -> m (JsonResponse b)
+      buildRequest url region inventory status = req GET (url /: showt region /: showt inventory) NoReqBody jsonResponse ("status" =: showt status)

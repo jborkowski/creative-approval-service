@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f6b69f307451c1c08196222d40af4dda57ab86c27717e9216ba85a272845559e
+-- hash: 570f6624120196f65e15135664b6d70798242379348249bff63498b8104d462f
 
 name:           creative-approval-service
 version:        0.1.0.0
@@ -27,12 +27,17 @@ source-repository head
 
 library
   exposed-modules:
+      AutoMode.Auto
+      Common.Exceptions
       Common.Logging
-      Configuration
-      Lib
-      Panel.Api
-      Panel.Model
-      Xandr.Model
+      Common.Network
+      Configuration.Config
+      Configuration.Types
+      Panel.API
+      Panel.Types
+      Xandr.API
+      Xandr.LoginHandler
+      Xandr.Types
   other-modules:
       Paths_creative_approval_service
   hs-source-dirs:
@@ -49,15 +54,15 @@ library
     , connection
     , containers
     , errors
-    , fast-logger
     , http-client
     , http-client-tls
     , iso8601-time
     , lens
+    , modern-uri
     , mtl
     , polysemy
     , polysemy-plugin
-    , req
+    , req >=3.1.0
     , retry
     , text
     , text-show
@@ -65,8 +70,6 @@ library
     , timers
     , unordered-containers
     , uuid
-    , wai
-    , warp
   default-language: Haskell2010
 
 executable reative-approval-service-exe
@@ -88,15 +91,15 @@ executable reative-approval-service-exe
     , containers
     , creative-approval-service
     , errors
-    , fast-logger
     , http-client
     , http-client-tls
     , iso8601-time
     , lens
+    , modern-uri
     , mtl
     , polysemy
     , polysemy-plugin
-    , req
+    , req >=3.1.0
     , retry
     , text
     , text-show
@@ -104,8 +107,6 @@ executable reative-approval-service-exe
     , timers
     , unordered-containers
     , uuid
-    , wai
-    , warp
   default-language: Haskell2010
 
 test-suite creative-approval-service-test
@@ -128,15 +129,15 @@ test-suite creative-approval-service-test
     , containers
     , creative-approval-service
     , errors
-    , fast-logger
     , http-client
     , http-client-tls
     , iso8601-time
     , lens
+    , modern-uri
     , mtl
     , polysemy
     , polysemy-plugin
-    , req
+    , req >=3.1.0
     , retry
     , text
     , text-show
@@ -144,6 +145,4 @@ test-suite creative-approval-service-test
     , timers
     , unordered-containers
     , uuid
-    , wai
-    , warp
   default-language: Haskell2010
